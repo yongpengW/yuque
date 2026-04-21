@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Yuque.Api/Yuque.Api.csproj" />
+    <Project Path="src/Yuque.Application/Yuque.Application.csproj" />
+    <Project Path="src/Yuque.Domain/Yuque.Domain.csproj" />
+    <Project Path="src/Yuque.Infrastructure/Yuque.Infrastructure.csproj" />
+    <Project Path="src/Yuque.Shared/Yuque.Shared.csproj" />
+  </Folder>
+</Solution>

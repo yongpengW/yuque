@@ -1,0 +1,6 @@
+@Yuque.Api_HostAddress = http://localhost:5103
+
+GET {{Yuque.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
