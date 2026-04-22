@@ -1,0 +1,257 @@
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using Yuque.Core.Dtos.Users;
+using Yuque.Core.Entities.Users;
+using Yuque.Core.Services.Interfaces;
+using Yuque.EFCore.DbContexts;
+using Yuque.EFCore.Repository;
+using Yuque.Infrastructure;
+using Yuque.Infrastructure.Captcha;
+using Yuque.Infrastructure.Constants;
+using Yuque.Infrastructure.Enums;
+using Yuque.Infrastructure.Exceptions;
+using Yuque.Infrastructure.Options;
+using Yuque.Infrastructure.Utils;
+using Yuque.Redis;
+using Yuque.Serilog;
+using StringExtensions = Yuque.Infrastructure.Utils.StringExtensions;
+
+namespace Yuque.Core.Services.Users
+{
+    /// <summary>
+    /// 用户Token服务
+    /// </summary>
+    /// <param name="dbContext"></param>
+    /// <param name="mapper"></param>
+    /// <param name="redisService"></param>
+    /// <param name="userService"></param>
+    /// <param name="httpContextAccessor"></param>
+    public class UserTokenService(
+        MainContext dbContext,
+        IMapper mapper,
+        IRedisService redisService,
+        IUserService userService,
+        IUserRoleService userRoleService,
+        IUserContextCacheService userContextCacheService,
+        IHttpContextAccessor httpContextAccessor,
+        IHostEnvironment hostEnvironment,
+        IOptionsMonitor<TokenOptions> tokenOptions
+    ) : ServiceBase<UserToken>(dbContext, mapper), IUserTokenService, IScopedDependency
+    {
+        public async Task<CaptchaDto> GenerateCaptchaAsync()
+        {
+            // 生成验证码字符
+            var captchaCode = Randomizer.Next(4, exceptChar: new char[] { 'o', 'O', '0', '1', 'I', 'l' }, hasSpecialChars: false);
+
+            // 生成验证码图片
+            var bytes = CaptchaHelper.GenerateCaptchaImage(120, 48, captchaCode);
+
+            var options = tokenOptions.CurrentValue;
+            var captcha = new CaptchaDto
+            {
+                Captcha = $"data:image/jpeg;base64,{Convert.ToBase64String(bytes)}",
+                Key = Guid.NewGuid().ToString("N"),
+                ExpireTime = DateTimeOffset.UtcNow.AddMinutes(options.CaptchaExpirationMinutes)
+            };
+
+            // 将验证码存储到缓存中，有效期从配置读取
+            await redisService.SetAsync(CoreRedisConstants.TokenCaptcha.Format(captcha.Key), captchaCode.ToLower(), TimeSpan.FromMinutes(options.CaptchaExpirationMinutes));
+
+            return captcha;
+        }
+
+        public async Task<bool> ValidateCaptchaAsync(string captchaCode, string captchaKey)
+        {
+
+            var cachedCaptcha = await redisService.GetAsync<string>(CoreRedisConstants.TokenCaptcha.Format(captchaKey));
+
+            // 删除缓存
+            await redisService.DeleteAsync(CoreRedisConstants.TokenCaptcha.Format(captchaKey));
+
+            // 因为验证码存入缓存时转为了小写，所以这里转小写后对比
+            return !cachedCaptcha.IsNullOrEmpty() && cachedCaptcha == captchaCode.ToLower();
+        }
+
+        /// <summary>
+        /// 账号密码登录
+        /// </summary>
+        /// <param name="userName"></param>
+        /// <param name="password"></param>
+        /// <param name="platform"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public async Task<UserTokenDto> LoginWithPasswordAsync(string userName, string password, PlatformType platform)
+        {
+            var user = await userService.GetAsync(a => a.UserName == userName);
+
+            // 如果根据用户名没有查找到数据，并且用户名是一个手机号码，则使用用户名匹配手机号码
+            if (user is null && userName.IsMobile())
+            {
+                user = await userService.GetAsync(a => a.Mobile == userName);
+            }
+
+            if (user == null)
+            {
+                throw new UnauthorizedException("账号或密码错误");
+            }
+
+            if (user.PasswordSalt.IsNullOrEmpty())
+            {
+                throw new UnauthorizedException("该用户还未设置密码");
+            }
+
+            //前端传递的密码是经过base64位处理过的
+            password = password.Base64ToString();
+            //!等特殊字符会被转义，这里需要解码
+            password = Uri.UnescapeDataString(password);
+
+            if (!user.Password.Equals(password.EncodePassword(user.PasswordSalt)))
+            {
+                throw new UnauthorizedException("账号或密码错误");
+            }
+
+            if (!user.IsEnable)
+            {
+                throw new UnauthorizedException("该账号已禁用");
+            }
+
+            // 检查用户在该平台下是否有可用角色（方案二：平台上下文驱动权限）
+            var platformRoles = await userRoleService.GetUserRoles(user.Id, platform);
+            if (platformRoles.Count == 0)
+            {
+                throw new UnauthorizedException("该账号在当前平台下未分配任何角色，无权限登录");
+            }
+
+            return await GenerateUserTokenAsync(user, platform);
+        }
+
+        /// <summary>
+        /// 生成用户 Token
+        /// </summary>
+        /// <param name="user"></param>
+        /// <param name="platform"></param>
+        /// <returns></returns>
+        private async Task<UserTokenDto> GenerateUserTokenAsync(User user, PlatformType platform)
+        {
+            if (!user.IsEnable)
+            {
+                throw new UnauthorizedException("该账号已禁用");
+            }
+
+            // 更新最后登录时间
+            await userService.UpdateFromQueryAsync(a => a.Id == user.Id, a => new User
+            {
+                LastLoginTime = DateTimeOffset.UtcNow
+            });
+
+            var ipAddress = httpContextAccessor.HttpContext?.Request.GetRemoteIpAddress();
+            var userAgent = httpContextAccessor.HttpContext?.Request.Headers.UserAgent.ToString();
+
+            var options = tokenOptions.CurrentValue;
+            var token = new UserToken()
+            {
+                ExpirationDate = DateTimeOffset.UtcNow.AddHours(options.ExpirationHours),
+                IpAddress = ipAddress?.ToString() ?? string.Empty,
+                PlatformType = platform,
+                UserAgent = userAgent ?? string.Empty,
+                UserId = user.Id,
+                LoginType = LoginStatus.Login,
+                RefreshTokenIsAvailable = true
+            };
+
+            token.Token = StringExtensions.GenerateToken(user.Id.ToString(), token.ExpirationDate);
+            token.TokenHash = StringExtensions.EncodeMD5(token.Token);
+            token.RefreshToken = StringExtensions.GenerateToken(token.Token, token.ExpirationDate.AddMonths(options.RefreshTokenExpirationMonths));
+
+            await InsertAsync(token);
+
+            token.User = user;
+            var cacheData = Mapper.Map<UserTokenCacheDto>(token);
+
+            // 将 Token 信息存储到 Redis，有效期从配置读取
+            await redisService.SetAsync(CoreRedisConstants.UserToken.Format(token.TokenHash), cacheData, TimeSpan.FromHours(options.ExpirationHours));
+
+            // 预热用户上下文缓存（Roles、Regions），供鉴权后从 Redis 读取
+            _ = await userContextCacheService.GetOrSetAsync(user.Id, platform, TimeSpan.FromHours(options.ExpirationHours));
+
+            return Mapper.Map<UserTokenDto>(token);
+        }
+
+        /// <summary>
+        /// 验证用户 Token
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public virtual async Task<UserTokenCacheDto?> ValidateTokenAsync(string token)
+        {
+            var tokenHash = StringExtensions.EncodeMD5(token);
+            var cacheValue = await redisService.GetAsync<UserTokenCacheDto>(CoreRedisConstants.UserToken.Format(tokenHash));
+            if (cacheValue != null)
+            {
+                return cacheValue;
+            }
+
+            // Redis 未命中（重启/过期）时回落到数据库，避免全量用户被强制下线
+            var userToken = await GetAsync(a => a.TokenHash == tokenHash
+                                             && a.ExpirationDate > DateTimeOffset.UtcNow
+                                             && a.LoginType != LoginStatus.logout);
+            if (userToken == null)
+            {
+                return null;
+            }
+
+            // 重新写入 Redis，剩余有效期与 DB 中的过期时间对齐
+            var cacheData = Mapper.Map<UserTokenCacheDto>(userToken);
+            var remaining = userToken.ExpirationDate - DateTimeOffset.UtcNow;
+            await redisService.SetAsync(CoreRedisConstants.UserToken.Format(tokenHash), cacheData, remaining);
+
+            return cacheData;
+        }
+
+        /// <summary>
+        /// 使用 Refresh Token 获取新 Token
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="refreshToken"></param>
+        /// <returns></returns>
+        public virtual async Task<UserTokenDto> RefreshTokenAsync(long userId, string refreshToken)
+        {
+            if (refreshToken.IsNullOrEmpty())
+            {
+                throw new UnauthorizedException("Refresh Token 无效");
+            }
+
+            var userToken = await GetAsync(a => a.RefreshToken == refreshToken);
+            if (userToken is null || !userToken.RefreshTokenIsAvailable || userToken.UserId != userId)
+            {
+                throw new UnauthorizedException("Refresh Token 无效");
+            }
+
+            // RefreshToken 有效期为一个月
+            if (userToken.CreatedAt < DateTimeOffset.UtcNow.AddMonths(-1))
+            {
+                throw new UnauthorizedException("Refresh Token 已过期");
+            }
+
+            var user = await userService.GetAsync(a => a.Id == userToken.UserId);
+            if (user is null)
+            {
+                throw new UnauthorizedException("用户不存在，无法刷新 Token");
+            }
+
+            // 生成 Token
+            var token = await GenerateUserTokenAsync(user, userToken.PlatformType);
+
+            user.LastLoginTime = DateTimeOffset.UtcNow;
+            await userService.UpdateAsync(user);
+
+            userToken.RefreshTokenIsAvailable = false;
+            await UpdateAsync(userToken);
+
+            return token;
+        }
+    }
+}

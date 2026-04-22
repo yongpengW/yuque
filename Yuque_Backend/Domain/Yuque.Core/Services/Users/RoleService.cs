@@ -1,0 +1,49 @@
+﻿using AutoMapper;
+using Yuque.Core.Entities.Users;
+using Yuque.Core.Services.Interfaces;
+using Yuque.EFCore.DbContexts;
+using Yuque.EFCore.Repository;
+using Yuque.Infrastructure;
+using Yuque.Infrastructure.Exceptions;
+using Yuque.Infrastructure.Utils;
+
+namespace Yuque.Core.Services.Users
+{
+    public class RoleService(MainContext dbContext, IMapper mapper) : ServiceBase<Role>(dbContext, mapper), IRoleService, IScopedDependency
+    {
+        public override async Task<Role> InsertAsync(Role entity, CancellationToken cancellationToken = default)
+        {
+            if (entity.Code.IsNullOrEmpty())
+            {
+                throw new BusinessException("角色代码不能为空");
+            }
+
+            if (await ExistsAsync(a => a.Code == entity.Code))
+            {
+                throw new BusinessException("角色代码已存在");
+            }
+
+            return await base.InsertAsync(entity, cancellationToken);
+        }
+
+        public override async Task<int> UpdateAsync(Role entity, CancellationToken cancellationToken = default)
+        {
+            if (entity.IsSystem)
+            {
+                throw new BusinessException("系统角色不允许修改");
+            }
+            if (entity.Code.IsNullOrEmpty())
+            {
+                throw new BusinessException("角色代码不能为空");
+            }
+
+            if (await ExistsAsync(a => a.Code == entity.Code && a.Id != entity.Id))
+            {
+                throw new BusinessException("角色代码已存在");
+            }
+
+            var result = await base.UpdateAsync(entity, cancellationToken);
+            return result;
+        }
+    }
+}

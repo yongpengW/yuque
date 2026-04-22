@@ -1,0 +1,90 @@
+using AutoMapper;
+using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Yuque.Core.Entities.SystemManagement;
+using Yuque.Core.Services.Interfaces;
+using Yuque.Infrastructure.Utils;
+using Yuque.Redis;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Reflection;
+using System.Text;
+
+namespace Yuque.Core.HostedServices
+{
+    /// <summary>
+    /// 程序启动后通过后台任务初始化 API 接口资源
+    /// </summary>
+    public class InitApiResourceService(IServiceProvider services, ILogger<InitApiResourceService> logger) : BackgroundService
+    {
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            logger.LogInformation($"开始执行{nameof(InitApiResourceService)}后台任务");
+            var watch = new Stopwatch();
+            watch.Start();
+
+            using var scope = services.CreateScope();
+            var redisDatabaseProvider = scope.ServiceProvider.GetRequiredService<IRedisService>();
+
+            var lockKey = $"Task.RegisterApi.{AppDomain.CurrentDomain.FriendlyName}";
+            var token = Guid.NewGuid().ToString("N");
+
+            // 获取锁
+            if (await redisDatabaseProvider.SetAsync(lockKey, token, TimeSpan.FromSeconds(10), CSRedis.RedisExistence.Nx))
+            {
+                var actionDescriptorProvider = scope.ServiceProvider.GetRequiredService<IActionDescriptorCollectionProvider>();
+                var actions = actionDescriptorProvider.ActionDescriptors.Items;
+
+                var assemblyName = Assembly.GetEntryAssembly()?.GetName().Name;
+                var apiResourceService = scope.ServiceProvider.GetRequiredService<IApiResrouceCoreService>();
+
+                var mapper = scope.ServiceProvider.GetService<IMapper>();
+
+                foreach (ControllerActionDescriptor descriptor in actions)
+                {
+                    var resource = new ApiResource
+                    {
+                        NameSpace = descriptor.ControllerTypeInfo.Namespace,
+                        ActionName = descriptor.ActionName,
+                        ControllerName = descriptor.ControllerName,
+                        RoutePattern = descriptor.AttributeRouteInfo?.Template,
+                        // 获取 Action 注释
+                        Name = DocsHelper.GetMethodComments(assemblyName, descriptor.MethodInfo)
+                    };
+                    if (resource.Name.IsNullOrEmpty())
+                    {
+                        resource.Name = descriptor.ActionName;
+                    }
+
+                    // 获取 Controller 注释
+                    resource.GroupName = DocsHelper.GetTypeComments(assemblyName, descriptor.ControllerTypeInfo);
+                    if (resource.GroupName.IsNullOrEmpty())
+                    {
+                        resource.GroupName = descriptor.ControllerName;
+                    }
+
+                    var httpMethod = descriptor.EndpointMetadata.FirstOrDefault(a => a.GetType() == typeof(HttpMethodMetadata));
+                    if (httpMethod is HttpMethodMetadata metadata)
+                    {
+                        // 统一使用大写，便于与运行时 Request.Method 对比
+                        resource.RequestMethod = metadata.HttpMethods.FirstOrDefault()?.ToUpperInvariant();
+                    }
+
+                    // 以 RouteTemplate:HttpMethod 作为唯一 Code，彻底解决同控制器同名重载 Action 相互覆盖问题。
+                    // 例：api/role:POST  vs  api/role/permission/{roleId}:POST，两者 Code 不同，各自独立存储。
+                    resource.Code = $"{resource.RoutePattern?.ToLowerInvariant()}:{resource.RequestMethod}";
+
+                    await apiResourceService.InsertOrUpdateAsync(resource, a => a.Code == resource.Code);
+                }
+
+                watch.Stop();
+                logger.LogInformation($"后台任务{nameof(InitApiResourceService)}执行完成，耗时:{watch.ElapsedMilliseconds}ms");
+            }
+        }
+    }
+}

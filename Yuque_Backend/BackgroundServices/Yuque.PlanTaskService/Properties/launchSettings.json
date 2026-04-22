@@ -1,0 +1,13 @@
+﻿{
+  "profiles": {
+    "Yuque.PlanTaskService": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}

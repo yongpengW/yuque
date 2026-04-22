@@ -183,6 +183,15 @@
 - 实现版本、评论、搜索、分享等复杂能力。
 - 逐步补充缓存、对象存储、后台任务与搜索增强能力。
 
-## 10. 结论
+## 10. 后端基座（Yuque_Backend）与裁剪约定
+
+- **代码位置**：仓库内 `Yuque_Backend/`（.NET 10 + EF Core + Npgsql + Redis + RabbitMQ + SignalR 等）。
+- **语雀业务扩展**：在现有分层上增加知识库 / 文档 / 版本等模块；**主键沿用雪花 `bigint`**；**文档正文列使用 `jsonb`**（见 `docs/database_schema.md`）。
+- **库表约束**：语雀新建表 **不建数据库外键**，仅用业务 id 逻辑关联，与基座 `UseRemoveForeignKeys` 一致；**附件使用独立 `attachments` 表**（不复用 `File`），见 `docs/database_baseline_table_mapping.md`。
+- **权限**：基座 **RBAC 仅用于管理端与系统设置**；**知识库与文档权限单独建模**（见 `docs/backend_baseline.md` §2）。
+- **裁剪**：**已移除 AgileConfig 客户端启动逻辑**；连接串使用 **`ConnectionStrings:DefaultConnection`**（并兼容旧键 `PostgreSQL`）。**保留** `Yuque.MQService`、`Yuque.PlanTaskService` 以备文档同步与实时协作演进；**API 网关**（`Host/Yuque.Gateway`）不纳入当前解决方案与默认交付，单机开发以 `Yuque.WebAPI` 为主。
+- **详细约定**：见 `docs/backend_baseline.md`。
+
+## 11. 结论
 
 本项目当前阶段的最优技术路线为：前后端分离，前端使用 React + Vite + TypeScript + Ant Design，配合 React Router、Zustand、TanStack Query 与 CSS Modules；后端使用 .NET 10；数据库使用 PostgreSQL 18。该方案兼顾首版交付效率、业务复杂度承载能力与后续扩展空间，适合作为语雀类在线文档产品的第一阶段正式技术基线。

@@ -1,0 +1,490 @@
+﻿using AutoMapper;
+using DynamicLocalizer;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.SignalR.Protocol;
+using Microsoft.AspNetCore.StaticFiles; 
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.Json;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using Yuque.Core.Authentication;
+using Yuque.Core.Filters;
+using Yuque.Core.HostedServices;
+using Yuque.Core.Schedules;
+using Yuque.Core.SignalR;
+using Yuque.Infrastructure;
+using Yuque.Infrastructure.Attributes;
+using Yuque.Infrastructure.Converters;
+using Yuque.Infrastructure.Enums;
+using Yuque.Infrastructure.Options;
+using Yuque.Infrastructure.TypeFinders;
+using Yuque.Infrastructure.Utils;
+using Yuque.Swagger;
+using Yuque.Redis;
+using Yuque.EFCore;
+using Yuque.RabbitMQ;
+using Yuque.Serilog;
+using Yuque.Infrastructure.FileStroage;
+using Yuque.Infrastructure.Client;
+using System.Reflection;
+using System.Runtime.Loader;
+using JsonLongConverter = Yuque.Infrastructure.Converters.JsonLongConverter;
+using Newtonsoft.Json.Linq;
+using Yuque.Core.Middlewares;
+
+namespace Yuque.Core
+{
+    public static partial class ServiceCollectionExtensions
+    {
+        /// <summary>
+        /// 项目初始化函数
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="moduleKey"></param>
+        /// <param name="moduleTitle"></param>
+        /// <param name="coreServiceType">服务类型</param>
+        /// <returns></returns>
+        /// 
+        public static async Task InitAppliation(this WebApplicationBuilder builder, string moduleKey, string moduleTitle, CoreServiceType coreServiceType = CoreServiceType.WebService)
+        {
+            //ExcelPackage.LicenseContext = LicenseContext.Commercial;
+
+            builder.AddBuilderServices(moduleKey, moduleTitle, coreServiceType);
+
+            var app = builder.Build();
+
+            app.UseApp(moduleKey, moduleTitle, coreServiceType);
+
+            await app.RunAsync();
+        }
+
+        /// <summary>
+        /// 应用程序启动时初始化
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="moduleKey"></param>
+        /// <param name="moduleTitle"></param>
+        /// <param name="coreServiceType">服务类型</param>
+        /// <returns></returns>
+        public static WebApplicationBuilder AddBuilderServices(this WebApplicationBuilder builder, string moduleKey, string moduleTitle, CoreServiceType coreServiceType = CoreServiceType.WebService)
+        {
+            builder.Host.InitHostAndConfig(moduleKey, coreServiceType);
+            builder.Services.AddDynamicLocalizer(new DynamicLocalizerOption()
+            {
+                LoadResource = () =>
+                {
+                    Dictionary<string, string> resource = [];
+                    var assembly = Assembly.GetExecutingAssembly();
+                    string[] jsonFileNames = ["en.json", "zh.json"];
+
+                    foreach (var jsonFileName in jsonFileNames)
+                    {
+                        var jsonfile = $"{assembly.GetName().Name}.Language.{jsonFileName}";
+                        var fileStream = assembly.GetManifestResourceStream(jsonfile);
+                        if (fileStream == null) continue;
+
+                        using var reader = new StreamReader(fileStream);
+                        var data = reader.ReadToEnd();
+                        var jobject = JObject.Parse(data);
+                        var culture = jobject["culture"];
+                        var textsToken = jobject["texts"];
+                        if (textsToken == null) continue;
+
+                        foreach (JProperty property in textsToken)
+                        {
+                            resource.TryAdd($"{property.Name}.{culture}", property.Value?.ToString() ?? string.Empty);
+                        }
+                    }
+
+                    return resource;
+                },
+                FormatCulture = (e => e.ToString().Replace("-", "_")),
+                DefaultCulture = "en"
+            });
+
+            // 注册IHttpContextAccessor
+            builder.Services.AddHttpContextAccessor();
+
+            builder.Services.AddEndpointsApiExplorer();
+
+            builder.Services.AddSwaggerGen(moduleKey, moduleTitle);
+
+            builder.Services.ConfigureOptions(builder.Configuration);
+
+            builder.Services.AddHttpLogging(options =>
+            {
+                options.RequestBodyLogLimit = 1024 * 1024;
+                options.ResponseBodyLogLimit = 1024 * 1024;
+                options.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.All;
+                options.MediaTypeOptions.AddText("application/json");
+            });
+
+            // 添加内存缓存服务 - SignalRNotificationService依赖此服务
+            builder.Services.AddMemoryCache(options =>
+            {
+                options.CompactionPercentage = 0.10;
+                options.ExpirationScanFrequency = TimeSpan.FromMinutes(10);
+
+                // .NET 8+ 性能优化选项
+                options.TrackLinkedCacheEntries = false;
+                options.TrackStatistics = builder.Environment.IsDevelopment();
+            });
+
+            //builder.Services.AddEFCoreAndMySql(builder.Configuration);
+            builder.Services.AddEFCoreAndPostgreSQL(builder.Configuration);
+
+            // 添加 Lazy<T> 支持以解决循环依赖问题
+            builder.Services.AddLazySupport();
+
+            // 通过反射自动注册所有服务 不需要再单独写注册服务的代码
+            // 只需要在服务类上继承ITransientDependency、IScopedDependency、ISingletonDependency
+            builder.Services.AddServices<ITransientDependency>(ServiceLifetime.Transient);
+            builder.Services.AddServices<IScopedDependency>(ServiceLifetime.Scoped);
+            builder.Services.AddServices<ISingletonDependency>(ServiceLifetime.Singleton);
+
+            builder.Services.AddAliyunOSS(builder.Configuration);
+
+            var cors = builder.Configuration["Cors"] ?? string.Empty;
+            builder.Services.AddCors(options =>
+            {
+                var origins = cors.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                options.AddPolicy(
+                    "AllowSpecificOrigin",
+                    builder => builder.WithOrigins(origins)
+                                      .AllowAnyMethod()
+                                      .AllowAnyHeader()
+                                      .AllowCredentials());
+            });
+
+            if (coreServiceType == CoreServiceType.WebService)
+            {
+                builder.Services.AddAuthentication("Authorization-Token")
+                    .AddScheme<RequestAuthenticationTokenSchemeOptions, RequestAuthenticationTokenHandler>("Authorization-Token", options => { });
+
+                builder.Services.AddAuthorization();
+            }
+            else if (coreServiceType == CoreServiceType.MQService)
+            {
+                // MQService 作为 SignalR 推送中继：启用专用认证 Scheme（支持 access_token）与 SignalR 服务
+                builder.Services.AddAuthentication("Authorization-SignalR-Token")
+                    .AddScheme<RequestAuthenticationSignalRTokenSchemeOptions, RequestAuthenticationSignalRTokenHandler>(
+                        "Authorization-SignalR-Token",
+                        options => { });
+
+                builder.Services.AddAuthorization();
+
+                builder.Services.AddSignalR(options =>
+                {
+                    options.EnableDetailedErrors = builder.Environment.IsDevelopment();
+                }).AddMessagePackProtocol();
+            }
+
+            builder.Services.AddControllers(options =>
+            {
+                //统一接口返回的处理
+                options.Filters.Add<RequestAsyncResultFilter>();
+
+                //接口异常统一处理
+                options.Filters.Add<ApiAsyncExceptionFilter>();
+
+                // 接口权限验证
+                options.Filters.Add<RequestAuthorizeFilter>();
+
+                // 操作日志统一处理
+                options.Filters.Add<OperationLogActionFilter>();
+            })
+            .AddJsonOptions(options =>
+            {
+                // 针对字段 long 类型，序列化时转换为字符串
+                options.JsonSerializerOptions.Converters.Add(new JsonLongConverter());
+                options.JsonSerializerOptions.Converters.Add(new JsonDecimalConverter());
+                options.JsonSerializerOptions.Converters.Add(new EmptyStringToNullDateTimeConverter());
+            });
+
+            // 注册 HttpClient 服务（包含 IHttpClientFactory）
+            builder.Services.AddHttpRequestClient();
+
+            builder.Services.AddAllAutoMapper();
+
+            builder.Services.AddRabbitMQ(builder.Configuration);
+
+            // 指定文件的静态资源
+            builder.Services.AddSingleton<IContentTypeProvider, FileExtensionContentTypeProvider>();
+
+            if (coreServiceType == CoreServiceType.PlanTaskService)
+            {
+                builder.Services.AddCronTask();
+
+                //初始化Database数据
+                //builder.Services.AddHostedService<ExecuteSeedDataService>();
+            }
+            else if (coreServiceType == CoreServiceType.WebService)
+            {
+                // 初始化API资源数据
+                //builder.Services.AddHostedService<InitApiResourceService>();
+            }
+
+            return builder;
+        }
+
+        /// <summary>
+        /// 应用程序启动时 注册中间件
+        /// </summary>
+        /// <param name="app"></param>
+        /// <returns></returns>
+        public static IApplicationBuilder UseApp(this WebApplication app, string moduleKey, string moduleTitle, CoreServiceType coreServiceType = CoreServiceType.WebService)
+        {
+            App.Init(app.Services);
+
+            //app.UseSetStartDefaultRoute();
+
+            if (app.Environment.IsDevelopment() || app.Services.GetService<IOptions<SwaggerOptions>>()?.Value.Enable == true)
+            {
+                app.UseSwagger(moduleKey, moduleTitle);
+            }
+
+            app.UseDynamicLocalizer();
+
+            app.UseMiddleware<ExceptionHandlerMiddleware>();
+
+            app.UseHttpLogging();
+
+            app.UseRedis(app.Configuration);
+
+            // 添加默认静态文件支持（wwwroot）
+            app.UseStaticFiles();
+
+            // 添加上传文件的静态文件服务
+            app.UseStaticFileServer();
+
+            app.UseHttpsRedirection();
+
+            app.UseCors("AllowSpecificOrigin");
+
+            app.UseAuthentication();
+
+            app.UseAuthorization();
+
+            app.MapControllers();
+
+            if (coreServiceType == CoreServiceType.MQService)
+            {
+                app.MapHub<NotificationHub>("/hubs/notification");
+                app.AddRabbitMQEventBus();
+            }
+
+            app.AddRabbitMQCodeManager();
+
+            return app;
+        }
+
+        /// <summary>
+        /// 初始化 Host，加载配置文件
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="moduleKey"></param>
+        /// <returns></returns>
+        public static IHostBuilder InitHostAndConfig(this IHostBuilder builder, string moduleKey, CoreServiceType coreServiceType = CoreServiceType.WebService)
+        {
+            Thread.CurrentThread.Name = moduleKey;
+
+            // 最开始代码中没有使用到，是不会加载到内存中的，所以需要手动加载
+            var assemblyFiles = Directory.GetFiles(AppContext.BaseDirectory, "Yuque.*.dll");
+            foreach (var assemblyFile in assemblyFiles)
+            {
+                AssemblyLoadContext.Default.LoadFromAssemblyPath(assemblyFile);
+            }
+
+            builder.ConfigureAppConfiguration((context, config) =>
+            {
+                // 重新加载配置文件到 Host 的配置构建器
+                config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: false);
+                config.AddJsonFile($"appsettings.{context.HostingEnvironment.EnvironmentName}.json", optional: true, reloadOnChange: false);
+            });
+
+            // 语雀产品 Fork：配置以 appsettings + 环境变量为准，不再启动 AgileConfig 客户端。
+
+            builder.UseLog(coreServiceType);
+
+            return builder;
+        }
+
+        /// <summary>
+        /// 上传文件的静态文件服务
+        /// </summary>
+        /// <param name="app"></param>
+        /// <returns></returns>
+        public static IApplicationBuilder UseStaticFileServer(this IApplicationBuilder app)
+        {
+            var storageOptions = app.ApplicationServices.GetService<IOptions<StorageOptions>>();
+            var uploadPath = storageOptions?.Value?.Path;
+            var staticDirectory = Path.Combine(
+                AppContext.BaseDirectory,
+                uploadPath.IsNullOrEmpty() ? "uploads" : uploadPath);
+
+            var forwardedHeadersOptions = new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+                ForwardLimit = null
+            };
+            forwardedHeadersOptions.KnownIPNetworks.Clear();
+            forwardedHeadersOptions.KnownProxies.Clear();
+
+            app.UseForwardedHeaders(forwardedHeadersOptions);
+
+            Directory.CreateDirectory(staticDirectory);
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                ServeUnknownFileTypes = true,
+                RequestPath = "/static",
+                FileProvider = new PhysicalFileProvider(staticDirectory)
+            });
+
+            return app;
+        }
+
+        /// <summary>
+        /// 添加 Lazy<T> 支持以解决循环依赖问题
+        /// </summary>
+        /// <param name="services"></param>
+        /// <returns></returns>
+        public static IServiceCollection AddLazySupport(this IServiceCollection services)
+        {
+            services.AddTransient(typeof(Lazy<>), typeof(LazyService<>));
+            return services;
+        }
+
+        /// <summary>
+        /// 注册所有 AutoMapper 配置信息
+        /// </summary>
+        /// <param name="services"></param>
+        /// <returns></returns>
+        public static IServiceCollection AddAllAutoMapper(this IServiceCollection services)
+        {
+            var types = TypeFinders.SearchTypes(typeof(Profile), TypeFinders.TypeClassification.Class).ToArray();
+            // .net8可以直接services.AddAutoMapper(types);
+            // 但是.net10的AddAutoMapper不支持直接传Type[]了
+
+            if (types.Length == 0)
+            {
+                Console.WriteLine("警告: 未找到任何 AutoMapper Profile 类型");
+                return services;
+            }
+
+            var assemblies = types.Select(t => t.Assembly).Distinct().ToArray();
+
+            Console.WriteLine($"注册 AutoMapper，共找到 {types.Length} 个 Profile，分布在 {assemblies.Length} 个程序集中");
+            foreach (var t in types) Console.WriteLine($"  找到 Profile: {t.FullName}");
+
+            services.AddAutoMapper(cfg =>
+            {
+                foreach (var profileType in types)
+                {
+                    cfg.AddProfile(profileType);
+                }
+            });
+
+            return services;
+        }
+
+        /// <summary>
+        /// 自动注册所有实现 IOptions 的配置选项
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="configuration"></param>
+        /// <returns></returns>
+        private static IServiceCollection ConfigureOptions(this IServiceCollection services, ConfigurationManager configuration)
+        {
+            PrintConfigurationProvider(configuration);
+
+            services.AddOptions();
+
+            // 注册所有 Options
+            var types = TypeFinders.SearchTypes(typeof(IOptions), TypeFinders.TypeClassification.Interface);
+
+            // 缓存反射方法
+            Type extensionClass = typeof(OptionsConfigurationServiceCollectionExtensions);
+            Type[] parameterTypes = [typeof(IServiceCollection), typeof(IConfiguration)];
+            string extensionName = nameof(OptionsConfigurationServiceCollectionExtensions.Configure);
+            MethodInfo? configureExtension = extensionClass.GetMethod(extensionName, parameterTypes);
+
+            if (configureExtension == null)
+            {
+                Console.WriteLine("警告: 无法找到 Configure 扩展方法");
+                return services;
+            }
+
+            foreach (var optionType in types)
+            {
+                try
+                {
+                    var instance = Activator.CreateInstance(optionType) as IOptions;
+                    if (instance == null) continue;
+
+                    IConfiguration section = instance.SectionName.IsNullOrEmpty() 
+                        ? configuration 
+                        : configuration.GetSection(instance.SectionName);
+
+                    MethodInfo extensionMethod = configureExtension.MakeGenericMethod(optionType);
+                    extensionMethod.Invoke(null, [services, section]);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"注册配置选项 {optionType.Name} 失败: {ex.Message}");
+                }
+            }
+
+            return services;
+        }
+
+        /// <summary>
+        /// 程序启动时打印配置文件地址
+        /// </summary>
+        /// <param name="configuration"></param>
+        private static void PrintConfigurationProvider(IConfiguration configuration)
+        {
+            var root = (IConfigurationBuilder)configuration;
+
+            foreach (var source in root.Sources.OfType<JsonConfigurationSource>())
+            {
+                var path = Path.Combine(((PhysicalFileProvider)source.FileProvider).Root, source.Path);
+                //Log.Information($"配置文件({(File.Exists(path) ? "有效" : "无效")}):{path}");
+                Console.WriteLine($"Configuration file({(File.Exists(path) ? "Effective" : "Invalid")}):{path}");
+            }
+        }
+
+        /// <summary>
+        /// 初始化定时任务
+        /// </summary>
+        /// <param name="services"></param>
+        /// <returns></returns>
+        public static IServiceCollection AddCronTask(this IServiceCollection services)
+        {
+            var cronType = typeof(CronScheduleService);
+
+            foreach (var type in TypeFinders.SearchTypes(cronType, TypeFinders.TypeClassification.Class))
+            {
+                services.Add(new ServiceDescriptor(typeof(IHostedService), type, ServiceLifetime.Singleton));
+            }
+            return services;
+        }
+
+        /// <summary>
+        /// Lazy<T> 服务实现类，用于支持依赖注入中的 Lazy<T>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        public class LazyService<T> : Lazy<T> where T : class
+        {
+            public LazyService(IServiceProvider serviceProvider)
+                : base(serviceProvider.GetRequiredService<T>)
+            {
+            }
+        }
+    }
+}

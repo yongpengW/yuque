@@ -1,0 +1,21 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Yuque.Infrastructure.Enums
+{
+    /// <summary>
+    /// 登录状态
+    /// </summary>
+    public enum LoginStatus
+    {
+        /// <summary>
+        /// 登录状态
+        /// </summary>
+        Login = 1,
+        /// <summary>
+        /// 登出状态
+        /// </summary>
+        logout = 2
+    }
+}

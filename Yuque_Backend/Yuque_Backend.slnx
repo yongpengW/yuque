@@ -1,0 +1,22 @@
+<Solution>
+  <Folder Name="/BackgroundServices/">
+    <Project Path="BackgroundServices/Yuque.MQService/Yuque.MQService.csproj" />
+    <Project Path="BackgroundServices/Yuque.PlanTaskService/Yuque.PlanTaskService.csproj" />
+  </Folder>
+  <Folder Name="/Domain/">
+    <Project Path="Domain/Yuque.Core/Yuque.Core.csproj" />
+    <Project Path="Domain/Yuque.EFCore/Yuque.EFCore.csproj" />
+    <Project Path="Domain/Yuque.Excel/Yuque.Excel.csproj" />
+    <Project Path="Domain/Yuque.RabbitMQ/Yuque.RabbitMQ.csproj" />
+    <Project Path="Domain/Yuque.Redis/Yuque.Redis.csproj" />
+    <Project Path="Domain/Yuque.Serilog/Yuque.Serilog.csproj" />
+    <Project Path="Domain/Yuque.Swagger/Yuque.Swagger.csproj" />
+  </Folder>
+  <Folder Name="/Host/">
+    <Project Path="Host/Yuque.Gateway/Yuque.Gateway.csproj" Id="01a7d3af-361a-48d5-9b6c-b84071834b8f" />
+    <Project Path="Host/Yuque.WebAPI/Yuque.WebAPI.csproj" />
+  </Folder>
+  <Folder Name="/Infrastructure/">
+    <Project Path="Infrastructure/Yuque.Infrastructure.csproj" />
+  </Folder>
+</Solution>

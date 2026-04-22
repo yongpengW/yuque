@@ -1,0 +1,29 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Yuque.RabbitMQ.EventBus
+{
+    /// <summary>
+    /// RabbitMQ 发布接口
+    /// </summary>
+    public interface IEventPublisher
+    {
+        /// <summary>
+        /// 发布事件消息
+        /// </summary>
+        /// <typeparam name="TEvent"></typeparam>
+        /// <param name="message">事件消息</param>
+        /// <param name="messageIdOverride">可选。指定时用作 BasicProperties.MessageId，用于手动重试等场景，避免与首次发布的消费幂等键冲突</param>
+        Task PublishAsync<TEvent>(TEvent message, string? messageIdOverride = null) where TEvent : IEvent;
+
+        /// <summary>
+        /// 发布延迟事件消息（TTL + DLX，使用固定档位）
+        /// </summary>
+        /// <typeparam name="TEvent"></typeparam>
+        /// <param name="message"></param>
+        /// <param name="delayTier">延迟档位（1/3/5/10/30/60/120 分钟）</param>
+        Task PublishDelayedAsync<TEvent>(TEvent message, DelayTier delayTier) where TEvent : IEvent;
+    }
+}

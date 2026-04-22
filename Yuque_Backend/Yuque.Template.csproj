@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageType>Template</PackageType>
+    <PackageVersion>1.0.0</PackageVersion>
+    <PackageId>Yuque.Template</PackageId>
+    <Title>Yuque - Modern Microservices Solution Template</Title>
+    <Authors>Leo Wang</Authors>
+    <Description>🚀 A modern, production-ready microservices solution template for .NET with SignalR, RabbitMQ, Redis, EF Core and clean architecture.</Description>
+    <PackageTags>dotnet-new;templates;microservices;signalr;rabbitmq;redis;efcore;yuque;clean-architecture</PackageTags>
+    <PackageProjectUrl>https://github.com/yongpengW/Yuque</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/yongpengW/Yuque</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <IncludeContentInPack>true</IncludeContentInPack>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <ContentTargetFolders>content</ContentTargetFolders>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <NoDefaultExcludes>true</NoDefaultExcludes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="**\*" Exclude="**\bin\**;**\obj\**;**\.vs\**;**\.git\**;**\.idea\**;**\packages\**;**\*.user;**\*.suo" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>

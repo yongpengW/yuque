@@ -1,0 +1,283 @@
+﻿using AutoMapper;
+using Ardalis.Specification;
+using Microsoft.EntityFrameworkCore;
+using Yuque.Core.Dtos.Menus;
+using Yuque.Core.Dtos.Permissions;
+using Yuque.Core.Entities.SystemManagement;
+using Yuque.Core.Entities.Users;
+using Yuque.Core.Services.SystemManagement;
+using Yuque.EFCore.DbContexts;
+using Yuque.EFCore.Repository;
+using Yuque.Infrastructure;
+using Yuque.Infrastructure.Enums;
+using Yuque.Infrastructure.Exceptions;
+using Yuque.Core.Services.Interfaces;
+
+namespace Yuque.Core.Services.Users
+{
+    public class PermissionService(MainContext dbContext, IMapper mapper, IMenuService menuService, IServiceBase<ApiResource> apiResourceService, IServiceBase<MenuResource> menuResourceService, IRoleService roleService, IUserContextCacheService userContextCacheService) : ServiceBase<Permission>(dbContext, mapper), IPermissionService, IScopedDependency
+    {
+        /// <summary>
+        /// 修改角色权限
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public async Task ChangeRolePermissionAsync(ChangeRolePermissionDto model)
+        {
+            var role = await roleService.GetAsync(a => a.Id == model.RoleId);
+            if (role is null)
+            {
+                throw new BusinessException("要授权的角色不存在");
+            }
+
+            // 平台上下文：如未显式指定，则按角色 Platforms 过滤可见菜单
+            var platform = model.PlatformType;
+
+            // 优化：使用子查询直接在数据库层面删除，只需要一次数据库操作
+            var menuIdsQuery = menuService.GetQueryable()
+                .Where(a => (!platform.HasValue
+                                ? (role.Platforms == PlatformType.All || (role.Platforms & a.PlatformType) != 0)
+                                : a.PlatformType == platform.Value))
+                .Select(x => x.Id);
+
+            // 使用 Any 在数据库层面执行删除，避免将菜单ID列表加载到内存
+            await dbContext.Set<Permission>()
+                .Where(p => p.RoleId == model.RoleId && menuIdsQuery.Contains(p.MenuId))
+                .DeleteFromQueryAsync();
+
+            if (model.Menus is not { Length: > 0 })
+            {
+                // 没有任何菜单被勾选，直接清空权限并失效缓存
+
+                var emptyAffectedUserIds = await dbContext.Set<UserRole>()
+                    .Where(ur => ur.RoleId == model.RoleId)
+                    .Select(ur => ur.UserId)
+                    .Distinct()
+                    .ToListAsync();
+
+                foreach (var userId in emptyAffectedUserIds)
+                    await userContextCacheService.InvalidateAsync(userId);
+
+                return;
+            }
+
+            // 前端提交的菜单 Id 集合（去重）
+            var submittedMenuIds = model.Menus.Select(m => m.MenuId).ToArray();
+            var distinctSubmittedMenuIds = submittedMenuIds.Distinct().ToArray();
+
+            // 校验前端提交的菜单是否全部存在且属于当前平台上下文
+            var validMenuQuery = menuService.GetQueryable()
+                .Where(a => distinctSubmittedMenuIds.Contains(a.Id)
+                            && (!platform.HasValue
+                                ? (role.Platforms == PlatformType.All || (role.Platforms & a.PlatformType) != 0)
+                                : a.PlatformType == platform.Value));
+
+            var menus = await validMenuQuery.ToListAsync();
+
+            var validMenuIds = menus.Select(m => m.Id).ToHashSet();
+            var invalidSubmittedIds = distinctSubmittedMenuIds.Where(id => !validMenuIds.Contains(id)).ToArray();
+            if (invalidSubmittedIds.Length > 0)
+            {
+                // 提交了不存在或不属于当前平台的菜单
+                throw new BusinessException("存在无效或跨平台的菜单Id，变更已取消。");
+            }
+            var parentIds = new List<long>();
+
+            foreach (var item in menus)
+            {
+                if (!submittedMenuIds.Contains(item.ParentId) && item.ParentId != 0)
+                {
+                    parentIds.Add(item.ParentId);
+                }
+            }
+
+            // 构建 menuId -> DataRange 映射；父级节点固定使用 DataRange.All
+            var menuDataRangeMap = model.Menus
+                .GroupBy(m => m.MenuId)
+                .ToDictionary(g => g.Key, g => g.First().DataRange);
+
+            foreach (var parentId in parentIds.Distinct())
+            {
+                if (!menuDataRangeMap.ContainsKey(parentId))
+                {
+                    menuDataRangeMap[parentId] = DataRange.All;
+                }
+            }
+
+            var permissions = menuDataRangeMap.Select(kv => new Permission
+            {
+                MenuId = kv.Key,
+                RoleId = model.RoleId,
+                DataRange = kv.Value
+            }).ToList();
+
+            await InsertAsync(permissions);
+
+            // 角色权限变更后，使所有拥有该角色的用户的权限缓存失效
+            var affectedUserIds = await dbContext.Set<UserRole>()
+                .Where(ur => ur.RoleId == model.RoleId)
+                .Select(ur => ur.UserId)
+                .Distinct()
+                .ToListAsync();
+
+            foreach (var userId in affectedUserIds)
+                await userContextCacheService.InvalidateAsync(userId);
+        }
+
+        /// <summary>
+        /// 获取对象菜单权限
+        /// </summary>
+        /// <param name="roleId"></param>
+        /// <returns></returns>
+        public async Task<List<PermissionDto>> GetRolePermissionAsync(long roleId, PlatformType? platformType)
+        {
+            var role = await roleService.GetByIdAsync(roleId);
+            if (role is null)
+            {
+                throw new BusinessException("当前角色不存在");
+            }
+
+            var query = from m in menuService.GetQueryable().Where(a => (platformType.HasValue ? a.PlatformType == platformType
+                                                      : (role.Platforms == PlatformType.All || (role.Platforms & a.PlatformType) != 0)))
+                        join p in GetQueryable().Where(a => a.RoleId == roleId) on m.Id equals p.MenuId into pt
+                        from pm in pt.DefaultIfEmpty()
+                        select new PermissionDto
+                        {
+                            MenuId = m.Id,
+                            MenuName = m.Name,
+                            MenuParentId = m.ParentId,
+                            MenuType = m.Type,
+                            MenuOrder = m.Order,
+                            HasPermission = pm != null,
+                            RoleId = pm != null ? pm.RoleId : roleId,
+                            Id = pm != null ? pm.Id : 0,
+                            MenuUrl = m.Url ?? string.Empty,
+                            DataRange = pm != null ? pm.DataRange : DataRange.All
+                        };
+
+            var permissions = await query.ToListAsync();
+
+            Func<long, bool, List<PermissionDto>> getChildren = null;
+
+            getChildren = (parentId, operate) =>
+            {
+                if (operate)
+                {
+                    return permissions.Where(a => a.MenuParentId == parentId && a.MenuType == MenuType.Operation).OrderBy(a => a.MenuOrder).ToList();
+                }
+
+                return permissions.Where(a => a.MenuParentId == parentId && a.MenuType != MenuType.Operation).OrderBy(a => a.MenuOrder).Select(a =>
+                {
+                    a.Children = getChildren(a.MenuId, false);
+                    a.Operations = getChildren(a.MenuId, true);
+
+                    if (a.Children.Count == 0)
+                    {
+                        a.Children = null;
+                    }
+
+                    return a;
+                }).ToList();
+            };
+
+            return getChildren(0, false);
+        }
+
+        /// <summary>
+        /// 获取对象菜单权限
+        /// </summary>
+        /// <param name="roleIds"></param>
+        /// <returns></returns>
+        public async Task<List<PermissionDto>> GetRolePermissionAsync(List<long> roleIds, PlatformType? platformType, bool isRoot)
+        {
+            var roles = await roleService.GetListAsync(x => roleIds.Contains(x.Id));
+            if (roles.Count == 0)
+            {
+                throw new BusinessException("当前角色不存在");
+            }
+
+            var permissions = new List<PermissionDto>();
+
+            foreach (var role in roles)
+            {
+                var query = from m in menuService.GetQueryable().Where(a => (platformType.HasValue ? a.PlatformType == platformType
+                                                          : (role.Platforms == PlatformType.All || (role.Platforms & a.PlatformType) != 0)))
+                            join p in GetQueryable().Where(a => a.RoleId == role.Id) on m.Id equals p.MenuId into pt
+                            from pm in pt.DefaultIfEmpty()
+                            select new PermissionDto
+                            {
+                                MenuId = m.Id,
+                                MenuName = m.Name,
+                                MenuParentId = m.ParentId,
+                                MenuType = m.Type,
+                                MenuOrder = m.Order,
+                                HasPermission = isRoot || pm != null,// 超级管理员默认拥有所有权限
+                                RoleId = pm != null ? pm.RoleId : role.Id,
+                                Id = pm != null ? pm.Id : 0,
+                                MenuUrl = m.Url ?? string.Empty,
+                                DataRange = pm != null ? pm.DataRange : DataRange.All
+                            };
+
+                permissions.AddRange(await query.ToListAsync());
+            }
+
+            return permissions;
+        }
+
+        public async Task<List<MenuTreeDto>> GetUserMenuTreeListAsync(ICurrentUser currentUser, PlatformType platformType)
+        {
+            // 直接使用认证阶段按平台过滤并缓存的 RoleIds，无需再查 DB
+            var roleIds = currentUser.RoleIds.ToList();
+
+            if (!roleIds.Any())
+            {
+                return new List<MenuTreeDto>();
+            }
+
+            var permissions = await GetRolePermissionAsync(roleIds, platformType, currentUser.IsRoot);
+
+            var menuIds = permissions.Where(x => x.HasPermission).Select(x => x.MenuId).Distinct().ToHashSet();
+
+            var spec = Specifications<Menu>.Create();
+
+            if (platformType != PlatformType.All)
+            {
+                spec.Query.Where(a => a.PlatformType == platformType);
+            }
+
+            spec.Query.Where(a => a.IsVisible && menuIds.Contains(a.Id));
+
+            var menus = await menuService.GetListAsync(spec);
+
+            List<MenuTreeDto> getChildren(long parentId)
+            {
+                var children = menus.Where(a => a.ParentId == parentId).OrderBy(a => a.Order).ToList();
+                return children.Select(a =>
+                {
+                    var dto = Mapper.Map<MenuTreeDto>(a);
+
+                    dto.Children = getChildren(a.Id);
+
+                    if (dto.Children.Count == 0)
+                    {
+                        dto.Children = null;
+                    }
+
+                    return dto;
+                }).ToList();
+            }
+
+            return getChildren(0);
+        }
+
+        public async Task<bool> JudgeHasPermissionAsync(string code, string menuCode)
+        {
+            var menu = await menuService.GetAsync(a => a.Code == menuCode);
+
+            var resource = await apiResourceService.GetAsync(a => a.Code == code);
+
+            return await menuResourceService.ExistsAsync(a => a.MenuId == menu.Id && a.ApiResourceId == resource.Id);
+        }
+
+    }
+}
