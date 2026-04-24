@@ -7,6 +7,8 @@ frontend/.env.*
 !frontend/.env.example
 !frontend/.env.*.example
 
+.worktrees/
+
 backend/**/bin/
 backend/**/obj/
 backend/.vs/
