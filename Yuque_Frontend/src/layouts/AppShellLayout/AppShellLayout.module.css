@@ -136,21 +136,6 @@
   margin-top: auto;
 }
 
-.memberCard {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 50px;
-  padding: 0 14px;
-  border: 1px solid #e5e5e5;
-  border-radius: 8px;
-  background: #fff;
-}
-
-.memberCard a {
-  color: #1677ff;
-}
-
 .content {
   min-width: 0;
   flex: 1;

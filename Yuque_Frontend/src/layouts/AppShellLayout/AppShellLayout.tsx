@@ -86,10 +86,6 @@ export function AppShellLayout() {
         </div>
 
         <div className={styles.sidebarFooter}>
-          <div className={styles.memberCard}>
-            <span>专业会员 30 天后...</span>
-            <a>购买</a>
-          </div>
           <NavLink to="/settings/profile" className={styles.moreLink}>
             <CircleEllipsis size={18} />
             <span>更多</span>
