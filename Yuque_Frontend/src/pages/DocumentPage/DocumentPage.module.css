@@ -1,0 +1,49 @@
+.page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 58px 48px 120px;
+  background: #fff;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: 28px;
+  margin-bottom: 56px;
+}
+
+.header h1 {
+  margin: 0 0 12px;
+  font-size: 36px;
+}
+
+.header p {
+  margin: 0;
+  color: #8a929a;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.body {
+  font-size: 18px;
+  line-height: 1.9;
+}
+
+.body h2 {
+  margin-top: 42px;
+}
+
+.commentBox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 72px;
+  padding: 18px;
+  border: 1px solid #e5e7ea;
+  border-radius: 8px;
+  color: #77828c;
+}

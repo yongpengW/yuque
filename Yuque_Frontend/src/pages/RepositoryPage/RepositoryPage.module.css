@@ -1,0 +1,84 @@
+.page {
+  max-width: 1320px;
+  margin: 64px auto;
+  padding: 0 56px 80px;
+}
+
+.hero {
+  padding: 54px 62px;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 28px;
+}
+
+.bookIcon {
+  width: 42px;
+  height: 54px;
+  border: 3px solid #4c8bdc;
+  border-radius: 6px;
+  background: #bcd7fa;
+}
+
+.titleRow h1 {
+  margin: 0 0 20px;
+  font-size: 42px;
+  white-space: nowrap;
+}
+
+.titleRow p {
+  color: #77828c;
+  font-size: 20px;
+}
+
+.titleRow p strong {
+  color: #30343a;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.welcome {
+  margin-top: 120px;
+  font-size: 20px;
+}
+
+.welcome strong {
+  display: block;
+  margin-bottom: 24px;
+  font-size: 24px;
+}
+
+.catalog {
+  padding: 34px 62px;
+  background: #fff;
+}
+
+.group h2 {
+  margin: 30px 0 16px;
+  font-size: 22px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 160px;
+  align-items: center;
+  min-height: 52px;
+  border-bottom: 1px dashed #d8dde2;
+  font-size: 18px;
+}
+
+.row time {
+  color: #8a929a;
+}
+
+.empty {
+  padding: 80px;
+}

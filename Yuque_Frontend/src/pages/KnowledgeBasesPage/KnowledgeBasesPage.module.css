@@ -1,0 +1,102 @@
+.page {
+  padding: 42px 54px;
+}
+
+.page h1 {
+  margin: 0 0 34px;
+  font-weight: 500;
+}
+
+.common {
+  margin-bottom: 42px;
+  padding: 28px;
+  border-radius: 8px;
+  background: #f7f7f7;
+}
+
+.common header,
+.toolbar,
+.actions {
+  display: flex;
+  align-items: center;
+}
+
+.common header,
+.toolbar {
+  justify-content: space-between;
+}
+
+.common header button {
+  border: 0;
+  background: transparent;
+}
+
+.commonCard,
+.repoCard {
+  border: 1px solid #e5e7ea;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.commonCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 760px;
+  min-height: 96px;
+  margin-top: 18px;
+  padding: 0 28px;
+  font-size: 20px;
+}
+
+.bookIcon {
+  display: inline-block;
+  width: 25px;
+  height: 34px;
+  border: 2px solid #4c8bdc;
+  border-radius: 4px;
+  background: #bcd7fa;
+}
+
+.actions {
+  gap: 12px;
+}
+
+.mine h2 {
+  margin: 34px 0 20px;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.repoGrid {
+  display: grid;
+  grid-template-columns: minmax(420px, 760px);
+}
+
+.repoCard {
+  display: grid;
+  gap: 28px;
+  min-height: 280px;
+  padding: 30px;
+}
+
+.repoCard div {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 22px;
+}
+
+.repoCard ul {
+  display: grid;
+  gap: 18px;
+  margin: 0;
+  padding: 0 0 0 22px;
+  color: #7d858d;
+}
+
+.repoCard li {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+}

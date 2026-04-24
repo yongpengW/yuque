@@ -1,0 +1,54 @@
+.page {
+  padding: 44px 58px;
+}
+
+.header,
+.tableHead,
+.row,
+.name {
+  display: flex;
+  align-items: center;
+}
+
+.header {
+  justify-content: space-between;
+  margin-bottom: 58px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 500;
+}
+
+.table {
+  display: grid;
+}
+
+.tableHead,
+.row {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) 240px 260px 60px;
+  min-height: 72px;
+  border-bottom: 1px solid #eeeeee;
+}
+
+.tableHead {
+  color: #8b949e;
+}
+
+.row {
+  font-size: 18px;
+}
+
+.name {
+  gap: 18px;
+}
+
+.bookIcon {
+  width: 24px;
+  height: 32px;
+  border: 2px solid #4c8bdc;
+  border-radius: 4px;
+  background: #bcd7fa;
+}
