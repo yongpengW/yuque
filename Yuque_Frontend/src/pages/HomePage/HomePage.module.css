@@ -1,0 +1,97 @@
+.page {
+  position: relative;
+  padding: 46px 56px 80px;
+}
+
+.page h1 {
+  margin: 0 0 36px;
+  font-size: 30px;
+  font-weight: 500;
+}
+
+.quickGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(190px, 1fr));
+  gap: 18px;
+  margin-bottom: 54px;
+}
+
+.quickCard {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-height: 86px;
+  padding: 0 28px;
+  border: 1px solid #e4e6e8;
+  border-radius: 8px;
+  background: #fff;
+  text-align: left;
+}
+
+.quickCard span {
+  display: grid;
+  flex: 1;
+  gap: 6px;
+}
+
+.quickCard strong {
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.quickCard small {
+  color: #77828c;
+  font-size: 15px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.sectionHeader h2 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 500;
+}
+
+.filters {
+  display: flex;
+  gap: 16px;
+}
+
+.docList {
+  display: grid;
+  margin-top: 34px;
+}
+
+.docRow {
+  display: grid;
+  grid-template-columns: 36px minmax(260px, 1fr) 300px 140px;
+  align-items: center;
+  min-height: 92px;
+  border-bottom: 1px solid #eeeeee;
+  font-size: 18px;
+}
+
+.docRow span,
+.docRow time {
+  color: #7d858d;
+}
+
+.docIcon {
+  width: 22px;
+  height: 28px;
+  border: 2px solid #4c8bdc;
+  border-radius: 4px;
+}
+
+.floatingCreate {
+  position: fixed;
+  right: 48px;
+  bottom: 44px;
+  width: 54px;
+  height: 54px;
+}

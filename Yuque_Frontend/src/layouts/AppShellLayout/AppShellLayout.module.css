@@ -1,0 +1,166 @@
+.shell {
+  display: flex;
+  min-width: 1120px;
+  min-height: 100vh;
+  background: #fff;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex: 0 0 300px;
+  flex-direction: column;
+  height: 100vh;
+  padding: 18px 14px;
+  border-right: 1px solid #eeeeee;
+  background: #f8f8f8;
+}
+
+.brandRow,
+.searchRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brandRow {
+  margin-bottom: 26px;
+}
+
+.brand {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  font-size: 22px;
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 800;
+  background: linear-gradient(135deg, #19bf73, #89de51);
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  color: #9aa0a6;
+  background: #e4e8e5;
+}
+
+.searchRow {
+  margin-bottom: 24px;
+}
+
+.searchInput {
+  height: 48px;
+  border: 0;
+  background: #eeeeee;
+}
+
+.shortcut {
+  color: #a0a6ad;
+}
+
+.createButton {
+  width: 48px;
+  height: 48px;
+}
+
+.navList {
+  display: grid;
+  gap: 4px;
+}
+
+.navItem,
+.repoItem,
+.moreLink {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 48px;
+  padding: 0 16px;
+  border-radius: 8px;
+  color: #202124;
+  font-size: 18px;
+}
+
+.active,
+.repoActive,
+.navItem:hover,
+.repoItem:hover {
+  background: #eceeee;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 28px;
+  padding: 14px 16px 10px;
+  color: #262a2f;
+  font-size: 18px;
+}
+
+.repoList {
+  display: grid;
+  gap: 4px;
+}
+
+.bookIcon {
+  width: 20px;
+  height: 24px;
+  border: 2px solid #4c8bdc;
+  border-radius: 3px;
+  background: #bcd7fa;
+}
+
+.repoName {
+  overflow: hidden;
+  flex: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lock {
+  color: #8d969d;
+  font-size: 12px;
+}
+
+.sidebarFooter {
+  display: grid;
+  gap: 18px;
+  margin-top: auto;
+}
+
+.memberCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 58px;
+  padding: 0 16px;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.memberCard a {
+  color: #1677ff;
+}
+
+.content {
+  min-width: 0;
+  flex: 1;
+  background: #fff;
+}

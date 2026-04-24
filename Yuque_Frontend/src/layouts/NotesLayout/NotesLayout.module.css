@@ -1,0 +1,79 @@
+.layout {
+  display: grid;
+  grid-template-columns: 380px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.panel {
+  border-right: 1px solid #ededed;
+  background: #fbfbfb;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 104px;
+  padding: 0 28px;
+  border-bottom: 1px solid #ededed;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 500;
+}
+
+.viewToggle {
+  display: flex;
+  padding: 4px;
+  border-radius: 8px;
+  background: #f0f1f1;
+}
+
+.addButton {
+  margin-left: auto;
+  color: #18b96f;
+  border-color: #18b96f;
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 28px 18px;
+  font-size: 18px;
+}
+
+.tools span,
+.tools div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.noteList {
+  display: grid;
+  gap: 8px;
+  padding: 0 14px;
+}
+
+.noteItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 54px;
+  padding: 0 18px;
+  border-radius: 8px;
+  font-size: 18px;
+}
+
+.noteItem time {
+  color: #a5abb1;
+  font-size: 16px;
+}
+
+.active,
+.noteItem:hover {
+  background: #eeeeee;
+}
