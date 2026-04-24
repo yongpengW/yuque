@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Button, Input } from 'antd';
 import { Home, ListTree, MoreHorizontal, Plus, Search } from 'lucide-react';
 import { NavLink, Outlet, useParams } from 'react-router-dom';
+import { EntityIcon } from '../../components/EntityIcon/EntityIcon';
 import { getRepository } from '../../services/knowledgeService';
 import styles from './RepoWorkspaceLayout.module.css';
 
@@ -17,24 +18,24 @@ export function RepoWorkspaceLayout() {
       <aside className={styles.repoSidebar}>
         <div className={styles.breadcrumb}>语雀 / 个人知识库</div>
         <div className={styles.repoTitle}>
-          <span className={styles.bookIcon} />
+          <EntityIcon type="repository" size="md" />
           <strong>{repo?.name ?? '知识库'}</strong>
-          <MoreHorizontal size={21} />
+          <MoreHorizontal size={18} />
         </div>
         <div className={styles.searchRow}>
-          <Input prefix={<Search size={18} />} placeholder="搜索" suffix="Ctrl + J" />
-          <Button icon={<Plus size={21} />} />
+          <Input prefix={<Search size={16} />} placeholder="搜索" suffix="Ctrl + J" />
+          <Button icon={<Plus size={18} />} />
         </div>
         <NavLink to={`/r/${repoKey}`} end className={({ isActive }) => `${styles.repoNav} ${isActive ? styles.active : ''}`}>
-          <Home size={20} />
+          <Home size={17} />
           首页
         </NavLink>
         <div className={styles.catalogTitle}>
           <span>
-            <ListTree size={19} />
+            <ListTree size={16} />
             目录
           </span>
-          <ListTree size={18} />
+          <ListTree size={16} />
         </div>
         <nav className={styles.catalog}>
           {repo?.catalogGroups.map((group) => (

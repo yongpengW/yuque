@@ -1,6 +1,6 @@
 .shell {
   display: flex;
-  min-width: 1120px;
+  min-width: 1040px;
   min-height: 100vh;
   background: #fff;
 }
@@ -9,10 +9,10 @@
   position: sticky;
   top: 0;
   display: flex;
-  flex: 0 0 300px;
+  flex: 0 0 260px;
   flex-direction: column;
   height: 100vh;
-  padding: 18px 14px;
+  padding: 16px 12px;
   border-right: 1px solid #eeeeee;
   background: #f8f8f8;
 }
@@ -25,24 +25,24 @@
 }
 
 .brandRow {
-  margin-bottom: 26px;
+  margin-bottom: 22px;
 }
 
 .brand {
   display: flex;
   flex: 1;
   align-items: center;
-  gap: 10px;
-  font-size: 22px;
+  gap: 9px;
+  font-size: 19px;
 }
 
 .logo {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
   color: #fff;
   font-weight: 800;
   background: linear-gradient(135deg, #19bf73, #89de51);
@@ -52,19 +52,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   color: #9aa0a6;
   background: #e4e8e5;
 }
 
 .searchRow {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .searchInput {
-  height: 48px;
+  height: 40px;
   border: 0;
   background: #eeeeee;
 }
@@ -74,8 +74,8 @@
 }
 
 .createButton {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
 }
 
 .navList {
@@ -88,12 +88,12 @@
 .moreLink {
   display: flex;
   align-items: center;
-  gap: 14px;
-  min-height: 48px;
-  padding: 0 16px;
+  gap: 12px;
+  min-height: 42px;
+  padding: 0 14px;
   border-radius: 8px;
   color: #202124;
-  font-size: 18px;
+  font-size: 15px;
 }
 
 .active,
@@ -107,23 +107,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 28px;
-  padding: 14px 16px 10px;
+  margin-top: 24px;
+  padding: 12px 14px 8px;
   color: #262a2f;
-  font-size: 18px;
+  font-size: 15px;
 }
 
 .repoList {
   display: grid;
   gap: 4px;
-}
-
-.bookIcon {
-  width: 20px;
-  height: 24px;
-  border: 2px solid #4c8bdc;
-  border-radius: 3px;
-  background: #bcd7fa;
 }
 
 .repoName {
@@ -148,8 +140,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 58px;
-  padding: 0 16px;
+  min-height: 50px;
+  padding: 0 14px;
   border: 1px solid #e5e5e5;
   border-radius: 8px;
   background: #fff;

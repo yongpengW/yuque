@@ -1,27 +1,27 @@
 .page {
   position: relative;
-  padding: 46px 56px 80px;
+  padding: 38px 48px 72px;
 }
 
 .page h1 {
-  margin: 0 0 36px;
-  font-size: 30px;
+  margin: 0 0 30px;
+  font-size: 26px;
   font-weight: 500;
 }
 
 .quickGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(190px, 1fr));
-  gap: 18px;
-  margin-bottom: 54px;
+  gap: 14px;
+  margin-bottom: 44px;
 }
 
 .quickCard {
   display: flex;
   align-items: center;
-  gap: 18px;
-  min-height: 86px;
-  padding: 0 28px;
+  gap: 14px;
+  min-height: 72px;
+  padding: 0 22px;
   border: 1px solid #e4e6e8;
   border-radius: 8px;
   background: #fff;
@@ -35,25 +35,25 @@
 }
 
 .quickCard strong {
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 500;
 }
 
 .quickCard small {
   color: #77828c;
-  font-size: 15px;
+  font-size: 13px;
 }
 
 .sectionHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 28px;
+  margin-bottom: 22px;
 }
 
 .sectionHeader h2 {
   margin: 0;
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 500;
 }
 
@@ -64,16 +64,16 @@
 
 .docList {
   display: grid;
-  margin-top: 34px;
+  margin-top: 28px;
 }
 
 .docRow {
   display: grid;
-  grid-template-columns: 36px minmax(260px, 1fr) 300px 140px;
+  grid-template-columns: 32px minmax(240px, 1fr) 260px 120px;
   align-items: center;
-  min-height: 92px;
+  min-height: 68px;
   border-bottom: 1px solid #eeeeee;
-  font-size: 18px;
+  font-size: 15px;
 }
 
 .docRow span,
@@ -81,17 +81,10 @@
   color: #7d858d;
 }
 
-.docIcon {
-  width: 22px;
-  height: 28px;
-  border: 2px solid #4c8bdc;
-  border-radius: 4px;
-}
-
 .floatingCreate {
   position: fixed;
-  right: 48px;
-  bottom: 44px;
-  width: 54px;
-  height: 54px;
+  right: 36px;
+  bottom: 34px;
+  width: 46px;
+  height: 46px;
 }

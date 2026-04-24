@@ -1,6 +1,6 @@
 .layout {
   display: grid;
-  grid-template-columns: 380px minmax(0, 1fr);
+  grid-template-columns: 330px minmax(0, 1fr);
   min-height: 100vh;
 }
 
@@ -12,15 +12,15 @@
 .header {
   display: flex;
   align-items: center;
-  gap: 14px;
-  height: 104px;
-  padding: 0 28px;
+  gap: 12px;
+  height: 88px;
+  padding: 0 24px;
   border-bottom: 1px solid #ededed;
 }
 
 .header h1 {
   margin: 0;
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 500;
 }
 
@@ -41,8 +41,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 28px 28px 18px;
-  font-size: 18px;
+  padding: 24px 24px 16px;
+  font-size: 15px;
 }
 
 .tools span,
@@ -62,15 +62,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 54px;
-  padding: 0 18px;
+  min-height: 46px;
+  padding: 0 16px;
   border-radius: 8px;
-  font-size: 18px;
+  font-size: 15px;
 }
 
 .noteItem time {
   color: #a5abb1;
-  font-size: 16px;
+  font-size: 13px;
 }
 
 .active,

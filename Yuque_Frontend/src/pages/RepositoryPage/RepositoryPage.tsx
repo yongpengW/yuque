@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from 'antd';
 import { MoreHorizontal, Share2, Star } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
+import { EntityIcon } from '../../components/EntityIcon/EntityIcon';
 import { getRepository } from '../../services/knowledgeService';
 import styles from './RepositoryPage.module.css';
 
@@ -17,7 +18,7 @@ export function RepositoryPage() {
     <article className={styles.page}>
       <header className={styles.hero}>
         <div className={styles.titleRow}>
-          <span className={styles.bookIcon} />
+          <EntityIcon type="repository" size="lg" />
           <div>
             <h1>{repo.name}</h1>
             <p>

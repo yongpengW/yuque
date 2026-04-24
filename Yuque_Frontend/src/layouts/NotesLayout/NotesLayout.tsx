@@ -14,19 +14,19 @@ export function NotesLayout() {
         <header className={styles.header}>
           <h1>小记</h1>
           <div className={styles.viewToggle}>
-            <Button icon={<List size={18} />} />
-            <Button icon={<Grid2X2 size={18} />} />
+            <Button icon={<List size={16} />} />
+            <Button icon={<Grid2X2 size={16} />} />
           </div>
-          <Button className={styles.addButton} icon={<Feather size={22} />} />
+          <Button className={styles.addButton} icon={<Feather size={18} />} />
         </header>
         <div className={styles.tools}>
           <span>
-            <Tag size={18} />
+            <Tag size={16} />
             标签
           </span>
           <div>
-            <Search size={21} />
-            <MoreHorizontal size={22} />
+            <Search size={18} />
+            <MoreHorizontal size={18} />
           </div>
         </div>
         <nav className={styles.noteList}>

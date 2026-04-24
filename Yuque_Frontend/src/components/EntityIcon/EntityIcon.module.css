@@ -1,0 +1,33 @@
+.icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.repository {
+  color: #2f73d8;
+  background: transparent;
+}
+
+.icon.document {
+  color: #3b7bd9;
+  background: transparent;
+}
+
+.sm {
+  width: 26px;
+  height: 26px;
+}
+
+.md {
+  width: 28px;
+  height: 28px;
+}
+
+.lg {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+}

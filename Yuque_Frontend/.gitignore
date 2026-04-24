@@ -12,7 +12,7 @@ dist
 dist-ssr
 *.local
 *.tsbuildinfo
-verification-screenshots/
+verification-screenshots*/
 
 # Editor directories and files
 .vscode/*

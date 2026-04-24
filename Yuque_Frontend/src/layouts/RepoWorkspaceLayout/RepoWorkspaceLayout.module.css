@@ -1,6 +1,6 @@
 .layout {
   display: grid;
-  grid-template-columns: 360px minmax(0, 1fr);
+  grid-template-columns: 340px minmax(0, 1fr);
   min-height: 100vh;
   background: #f7f7f7;
 }
@@ -8,58 +8,50 @@
 .repoSidebar {
   overflow-y: auto;
   height: 100vh;
-  padding: 28px 12px;
+  padding: 24px 12px;
   border-right: 1px solid #ededed;
   background: #fff;
 }
 
 .breadcrumb {
-  margin: 0 12px 32px;
+  margin: 0 12px 28px;
   color: #6d7882;
 }
 
 .repoTitle {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 0 12px 28px;
+  gap: 12px;
+  padding: 0 12px 24px;
   border-bottom: 1px solid #ededed;
-  font-size: 24px;
+  font-size: 20px;
 }
 
 .repoTitle strong {
   flex: 1;
 }
 
-.bookIcon {
-  width: 22px;
-  height: 28px;
-  border: 2px solid #4c8bdc;
-  border-radius: 3px;
-  background: #bcd7fa;
-}
-
 .searchRow {
   display: grid;
-  grid-template-columns: 1fr 48px;
-  gap: 12px;
-  margin: 24px 0 14px;
+  grid-template-columns: 1fr 40px;
+  gap: 10px;
+  margin: 20px 0 12px;
 }
 
 .searchRow :global(.ant-input-affix-wrapper),
 .searchRow :global(.ant-btn) {
-  height: 48px;
+  height: 40px;
 }
 
 .repoNav,
 .catalogTitle {
   display: flex;
   align-items: center;
-  min-height: 48px;
-  gap: 16px;
-  padding: 0 14px;
+  min-height: 42px;
+  gap: 12px;
+  padding: 0 12px;
   border-radius: 8px;
-  font-size: 18px;
+  font-size: 15px;
 }
 
 .active,
@@ -74,31 +66,31 @@
 
 .catalogTitle span {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   align-items: center;
 }
 
 .catalog {
   display: grid;
-  gap: 20px;
-  padding: 12px 12px 80px;
+  gap: 16px;
+  padding: 10px 12px 72px;
 }
 
 .catalogGroup {
   display: grid;
-  gap: 18px;
+  gap: 13px;
 }
 
 .catalogGroup strong {
   color: #3d444b;
-  font-size: 18px;
+  font-size: 15px;
 }
 
 .catalogLink {
   overflow: hidden;
-  padding-left: 26px;
+  padding-left: 24px;
   color: #3d444b;
-  font-size: 16px;
+  font-size: 14px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

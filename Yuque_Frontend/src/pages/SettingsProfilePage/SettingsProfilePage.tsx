@@ -1,5 +1,6 @@
 import { Button, Input } from 'antd';
 import { BarChart3, Crown, KeyRound, Settings, ShieldCheck, UserRound } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import styles from './SettingsProfilePage.module.css';
 
 const settingsGroups = [
@@ -12,10 +13,14 @@ const settingsGroups = [
 ];
 
 export function SettingsProfilePage() {
+  const navigate = useNavigate();
+
   return (
     <main className={styles.layout}>
       <aside className={styles.sidebar}>
-        <a className={styles.back}>‹ 语雀　返回</a>
+        <button className={styles.back} type="button" onClick={() => navigate('/home')}>
+          ‹ 语雀　返回
+        </button>
         <div className={styles.user}>
           <div className={styles.avatar}>L</div>
           <strong>Leo</strong>

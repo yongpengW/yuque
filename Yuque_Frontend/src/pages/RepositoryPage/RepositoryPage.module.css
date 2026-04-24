@@ -1,11 +1,11 @@
 .page {
   max-width: 1320px;
-  margin: 64px auto;
-  padding: 0 56px 80px;
+  margin: 52px auto;
+  padding: 0 48px 72px;
 }
 
 .hero {
-  padding: 54px 62px;
+  padding: 46px 54px;
   border-radius: 8px;
   background: #fff;
 }
@@ -13,26 +13,18 @@
 .titleRow {
   display: flex;
   align-items: flex-start;
-  gap: 28px;
-}
-
-.bookIcon {
-  width: 42px;
-  height: 54px;
-  border: 3px solid #4c8bdc;
-  border-radius: 6px;
-  background: #bcd7fa;
+  gap: 22px;
 }
 
 .titleRow h1 {
   margin: 0 0 20px;
-  font-size: 42px;
+  font-size: 34px;
   white-space: nowrap;
 }
 
 .titleRow p {
   color: #77828c;
-  font-size: 20px;
+  font-size: 16px;
 }
 
 .titleRow p strong {
@@ -46,33 +38,33 @@
 }
 
 .welcome {
-  margin-top: 120px;
-  font-size: 20px;
+  margin-top: 92px;
+  font-size: 17px;
 }
 
 .welcome strong {
   display: block;
-  margin-bottom: 24px;
-  font-size: 24px;
+  margin-bottom: 18px;
+  font-size: 21px;
 }
 
 .catalog {
-  padding: 34px 62px;
+  padding: 28px 54px;
   background: #fff;
 }
 
 .group h2 {
-  margin: 30px 0 16px;
-  font-size: 22px;
+  margin: 26px 0 14px;
+  font-size: 19px;
 }
 
 .row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 160px;
   align-items: center;
-  min-height: 52px;
+  min-height: 44px;
   border-bottom: 1px dashed #d8dde2;
-  font-size: 18px;
+  font-size: 15px;
 }
 
 .row time {

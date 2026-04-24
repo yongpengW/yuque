@@ -1,26 +1,26 @@
 .layout {
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr);
+  grid-template-columns: 280px minmax(0, 1fr);
   min-height: 100vh;
 }
 
 .panel {
-  padding: 112px 18px 0 48px;
+  padding: 96px 16px 0 38px;
   border-right: 1px solid #ededed;
 }
 
 .groupCard {
   display: flex;
   justify-content: space-between;
-  min-height: 112px;
-  padding: 22px 18px;
+  min-height: 92px;
+  padding: 18px 16px;
   border-radius: 8px;
   background: #ededed;
 }
 
 .groupCard div {
   display: grid;
-  gap: 22px;
+  gap: 16px;
 }
 
 .groupCard span {

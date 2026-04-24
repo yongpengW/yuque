@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Button, Dropdown, Segmented } from 'antd';
 import { Bot, ChevronDown, FilePlus2, LibraryBig, Palette, PlusCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { EntityIcon } from '../../components/EntityIcon/EntityIcon';
 import { getRecentDocuments } from '../../services/knowledgeService';
 import styles from './HomePage.module.css';
 
@@ -21,7 +22,7 @@ export function HomePage() {
       <section className={styles.quickGrid}>
         {quickActions.map((action) => (
           <button key={action.label} className={styles.quickCard}>
-            <action.icon size={28} />
+            <action.icon size={22} />
             <span>
               <strong>{action.label}</strong>
               <small>{action.sub}</small>
@@ -44,7 +45,7 @@ export function HomePage() {
         <div className={styles.docList}>
           {documents.map((doc) => (
             <Link key={doc.id} to={`/r/${doc.repositoryKey}/d/${doc.key}`} className={styles.docRow}>
-              <span className={styles.docIcon} />
+              <EntityIcon type="document" size="sm" />
               <strong>{doc.title}</strong>
               <span>{doc.owner} / {doc.repositoryName}</span>
               <time>{doc.updatedAt}</time>

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { EntityIcon } from '../../components/EntityIcon/EntityIcon';
 import { getCurrentUser, getKnowledgeBases } from '../../services/knowledgeService';
 import styles from './AppShellLayout.module.css';
 
@@ -36,19 +37,19 @@ export function AppShellLayout() {
             <span className={styles.logo}>语</span>
             <strong>语雀</strong>
           </NavLink>
-          <Bell size={21} strokeWidth={1.8} />
+          <Bell size={18} strokeWidth={1.8} />
           <div className={styles.avatar}>{user?.name.slice(0, 1) ?? 'L'}</div>
         </div>
 
         <div className={styles.searchRow}>
           <Input
             className={styles.searchInput}
-            prefix={<Search size={18} />}
+            prefix={<Search size={16} />}
             placeholder="搜索"
             suffix={<span className={styles.shortcut}>Ctrl J</span>}
           />
           <Tooltip title="新建">
-            <Button className={styles.createButton} icon={<Plus size={22} />} />
+            <Button className={styles.createButton} icon={<Plus size={18} />} />
           </Tooltip>
         </div>
 
@@ -59,7 +60,7 @@ export function AppShellLayout() {
               to={item.to}
               className={({ isActive }) => `${styles.navItem} ${isActive ? styles.active : ''}`}
             >
-              <item.icon size={21} strokeWidth={1.9} />
+              <item.icon size={18} strokeWidth={1.9} />
               <span>{item.label}</span>
             </NavLink>
           ))}
@@ -67,7 +68,7 @@ export function AppShellLayout() {
 
         <div className={styles.sectionTitle}>
           <span>知识库</span>
-          <FolderOpen size={17} />
+          <FolderOpen size={15} />
         </div>
 
         <div className={styles.repoList}>
@@ -77,7 +78,7 @@ export function AppShellLayout() {
               to={`/r/${repo.key}`}
               className={({ isActive }) => `${styles.repoItem} ${isActive ? styles.repoActive : ''}`}
             >
-              <span className={styles.bookIcon} />
+              <EntityIcon type="repository" size="sm" />
               <span className={styles.repoName}>{repo.name}</span>
               {repo.isPrivate ? <span className={styles.lock}>锁</span> : null}
             </NavLink>
@@ -90,7 +91,7 @@ export function AppShellLayout() {
             <a>购买</a>
           </div>
           <NavLink to="/settings/profile" className={styles.moreLink}>
-            <CircleEllipsis size={21} />
+            <CircleEllipsis size={18} />
             <span>更多</span>
           </NavLink>
         </div>

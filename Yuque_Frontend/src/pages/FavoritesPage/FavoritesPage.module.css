@@ -1,5 +1,5 @@
 .page {
-  padding: 44px 58px;
+  padding: 38px 48px;
 }
 
 .header,
@@ -12,12 +12,12 @@
 
 .header {
   justify-content: space-between;
-  margin-bottom: 58px;
+  margin-bottom: 44px;
 }
 
 .header h1 {
   margin: 0;
-  font-size: 30px;
+  font-size: 26px;
   font-weight: 500;
 }
 
@@ -28,8 +28,8 @@
 .tableHead,
 .row {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) 240px 260px 60px;
-  min-height: 72px;
+  grid-template-columns: minmax(240px, 1fr) 200px 220px 50px;
+  min-height: 58px;
   border-bottom: 1px solid #eeeeee;
 }
 
@@ -38,17 +38,10 @@
 }
 
 .row {
-  font-size: 18px;
+  font-size: 15px;
 }
 
 .name {
-  gap: 18px;
+  gap: 14px;
 }
 
-.bookIcon {
-  width: 24px;
-  height: 32px;
-  border: 2px solid #4c8bdc;
-  border-radius: 4px;
-  background: #bcd7fa;
-}

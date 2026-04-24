@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Button, Dropdown, Segmented } from 'antd';
 import { Grid3X3, List, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { EntityIcon } from '../../components/EntityIcon/EntityIcon';
 import { getKnowledgeBases } from '../../services/knowledgeService';
 import styles from './KnowledgeBasesPage.module.css';
 
@@ -18,7 +19,7 @@ export function KnowledgeBasesPage() {
         </header>
         {repos.map((repo) => (
           <Link key={repo.key} to={`/r/${repo.key}`} className={styles.commonCard}>
-            <span className={styles.bookIcon} />
+            <EntityIcon type="repository" size="md" />
             <strong>{repo.name}</strong>
             {repo.isPrivate ? <span>锁</span> : null}
           </Link>
@@ -30,10 +31,10 @@ export function KnowledgeBasesPage() {
           <Segmented options={['我个人的', '邀请协作的']} defaultValue="我个人的" />
           <div className={styles.actions}>
             <Dropdown menu={{ items: [{ key: 'repo', label: '新建知识库' }, { key: 'group', label: '新建分组' }] }}>
-              <Button type="primary" ghost icon={<Plus size={18} />} />
+              <Button type="primary" ghost icon={<Plus size={16} />} />
             </Dropdown>
-            <Button icon={<Grid3X3 size={18} />} />
-            <Button icon={<List size={18} />} />
+            <Button icon={<Grid3X3 size={16} />} />
+            <Button icon={<List size={16} />} />
           </div>
         </div>
         <h2>我的知识库</h2>
@@ -41,7 +42,7 @@ export function KnowledgeBasesPage() {
           {repos.map((repo) => (
             <Link key={repo.key} to={`/r/${repo.key}`} className={styles.repoCard}>
               <div>
-                <span className={styles.bookIcon} />
+                <EntityIcon type="repository" size="md" />
                 <strong>{repo.name}</strong>
               </div>
               <ul>
